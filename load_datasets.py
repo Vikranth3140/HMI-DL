@@ -1,7 +1,6 @@
 import os
 import tarfile
 import json
-from datasets import load_dataset
 
 def extract_and_load_avsd_dataset(dataset_dir):
     data = []
@@ -19,20 +18,22 @@ def extract_and_load_avsd_dataset(dataset_dir):
                             data.append(json.loads(content))
     return data
 
+def load_activitynet_data(dataset_dir):
+    data = {}
+    files = ["train.json", "val_1.json", "val_2.json"]
+    for file in files:
+        file_path = os.path.join(dataset_dir, file)
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as f:
+                data.update(json.load(f))
+    return data
+
 # Load AVSD dataset
-dataset_dir = "OpenDataLab__AVSD/raw/.cache"
-avsd_data = extract_and_load_avsd_dataset(dataset_dir)
+avsd_dataset_dir = "OpenDataLab__AVSD/raw/.cache"
+avsd_data = extract_and_load_avsd_dataset(avsd_dataset_dir)
 print(f"Loaded {len(avsd_data)} training examples from AVSD dataset.")
 
 # Load ActivityNet dataset
-try:
-    activitynet_dataset = load_dataset("huggingface/activitynet-captions")
-    print("Loaded ActivityNet dataset.")
-except Exception as e:
-    print("Failed to load ActivityNet dataset. Error:", e)
-    # Fallback to an alternative dataset
-    try:
-        msr_vtt_dataset = load_dataset("MSR-VTT")
-        print("Loaded MSR-VTT dataset.")
-    except Exception as e:
-        print("Failed to load MSR-VTT dataset. Error:", e)
+activitynet_dataset_dir = "path_to_extracted_activitynet_files"
+activitynet_data = load_activitynet_data(activitynet_dataset_dir)
+print(f"Loaded {len(activitynet_data)} examples from ActivityNet dataset.")
