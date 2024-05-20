@@ -59,7 +59,7 @@ class MultimodalModel(nn.Module):
         return output
 
 def train_model(model, dataloader, epochs=5):
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()  # Use Mean Squared Error Loss for regression
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     for epoch in range(epochs):
@@ -69,7 +69,11 @@ def train_model(model, dataloader, epochs=5):
             audio_features = torch.randn(len(sentences), 128)  # Example random tensor
             text_features = torch.randint(0, 10000, (len(sentences), 10))  # Example random tensor
             output = model(video_features, audio_features, text_features)
-            loss = criterion(output, torch.tensor(timestamps))
+            
+            # Flatten timestamps for MSELoss
+            target = torch.tensor(timestamps).float().view(-1, 2)  # Ensure it's a float tensor
+            
+            loss = criterion(output.view(-1, 512), target)
             loss.backward()
             optimizer.step()
         print(f"Epoch {epoch+1}, Loss: {loss.item()}")
