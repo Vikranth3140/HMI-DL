@@ -10,6 +10,9 @@ def load_activitynet_data(dataset_dir):
             with open(file_path, 'r') as f:
                 file_data = json.load(f)
                 print(f"Loaded {len(file_data)} items from {file}")
+                # Print a sample of the data to verify structure
+                sample_key = list(file_data.keys())[0]
+                print(f"Sample data for {sample_key}: {file_data[sample_key]}")
                 data.update(file_data)
     return data
 
