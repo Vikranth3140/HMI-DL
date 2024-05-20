@@ -8,7 +8,9 @@ def load_activitynet_data(dataset_dir):
         file_path = os.path.join(dataset_dir, file)
         if os.path.exists(file_path):
             with open(file_path, 'r') as f:
-                data.update(json.load(f))
+                file_data = json.load(f)
+                print(f"Loaded {len(file_data)} items from {file}")
+                data.update(file_data)
     return data
 
 dataset_dir = "captions"
