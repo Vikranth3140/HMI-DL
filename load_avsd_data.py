@@ -4,7 +4,6 @@ import json
 
 def extract_and_load_avsd_dataset(dataset_dir):
     data = []
-    # Loop through all tar.gz files in the directory
     for filename in os.listdir(dataset_dir):
         if filename.endswith(".tar.gz"):
             file_path = os.path.join(dataset_dir, filename)
@@ -19,8 +18,6 @@ def extract_and_load_avsd_dataset(dataset_dir):
                             data.append(json.loads(content))
     return data
 
-# Provide the correct path to the dataset files
-dataset_dir = "OpenDataLab___AVSD/raw/.cache"
+dataset_dir = "OpenDataLab__AVSD/raw/.cache"
 avsd_data = extract_and_load_avsd_dataset(dataset_dir)
-
 print(f"Loaded {len(avsd_data)} training examples from AVSD dataset.")
