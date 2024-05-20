@@ -18,6 +18,24 @@ class VideoDataset(Dataset):
         item = self.data[video_id]
         return item['sentences'], item['timestamps']
 
+def collate_fn(batch):
+    sentences, timestamps = zip(*batch)
+
+    # Find the length of the longest sequence
+    max_len_sentences = max(len(s) for s in sentences)
+    max_len_timestamps = max(len(t) for t in timestamps)
+
+    # Pad sequences to the same length
+    padded_sentences = []
+    for s in sentences:
+        padded_sentences.append(s + [''] * (max_len_sentences - len(s)))
+
+    padded_timestamps = []
+    for t in timestamps:
+        padded_timestamps.append(t + [[0, 0]] * (max_len_timestamps - len(t)))
+
+    return padded_sentences, padded_timestamps
+
 class MultimodalModel(nn.Module):
     def __init__(self):
         super(MultimodalModel, self).__init__()
@@ -30,10 +48,14 @@ class MultimodalModel(nn.Module):
     def forward(self, video_features, audio_features, text_features):
         video_emb = self.video_encoder(video_features)
         audio_emb = self.audio_encoder(audio_features)
-        text_emb = self.text_encoder(text_features)
+        
+        # Sum text embeddings across the sequence length dimension to reduce dimensionality
+        text_emb = self.text_encoder(text_features).sum(dim=1)
+
+        # Ensure all embeddings have the same number of dimensions
         combined_features = torch.cat((video_emb, audio_emb, text_emb), dim=1)
         combined_features = self.fc(combined_features)
-        output, _ = self.decoder(combined_features)
+        output, _ = self.decoder(combined_features.unsqueeze(1))
         return output
 
 def train_model(model, dataloader, epochs=5):
@@ -64,8 +86,8 @@ def load_activitynet_data(dataset_dir):
                 data.update(file_data)
     return data
 
-data = load_activitynet_data("/mnt/data")
+data = load_activitynet_data("captions")
 dataset = VideoDataset(data)
-dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=collate_fn)
 model = MultimodalModel()
 train_model(model, dataloader)
