@@ -42,7 +42,8 @@ class MultimodalModel(nn.Module):
         self.video_encoder = nn.Linear(2048, 512)  # Example dimensions
         self.audio_encoder = nn.Linear(128, 512)  # Example dimensions
         self.text_encoder = nn.Embedding(10000, 512)  # Example dimensions
-        self.fc = nn.Linear(1536, 512)
+        self.fc = nn.Linear(1536, 512)  # Adjust to match GRU input size
+        self.fc_out = nn.Linear(512, 2)  # To match target shape
         self.decoder = nn.GRU(512, 512, num_layers=2, batch_first=True)
 
     def forward(self, video_features, audio_features, text_features):
@@ -56,6 +57,7 @@ class MultimodalModel(nn.Module):
         combined_features = torch.cat((video_emb, audio_emb, text_emb), dim=1)
         combined_features = self.fc(combined_features)
         output, _ = self.decoder(combined_features.unsqueeze(1))
+        output = self.fc_out(output.squeeze(1))
         return output
 
 def train_model(model, dataloader, epochs=5):
@@ -71,9 +73,13 @@ def train_model(model, dataloader, epochs=5):
             output = model(video_features, audio_features, text_features)
             
             # Flatten timestamps for MSELoss
-            target = torch.tensor(timestamps).float().view(-1, 2)  # Ensure it's a float tensor
+            target = torch.tensor(timestamps).float().view(len(sentences), -1, 2)  # Ensure it's a float tensor
             
-            loss = criterion(output.view(-1, 512), target)
+            # Ensure the output and target tensors have the same shape
+            if output.shape != target.shape:
+                target = target[:, :output.size(1), :]
+            
+            loss = criterion(output, target)
             loss.backward()
             optimizer.step()
         print(f"Epoch {epoch+1}, Loss: {loss.item()}")
